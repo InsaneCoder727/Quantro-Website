@@ -1,10 +1,10 @@
 'use client'
 
-import { Home, TrendingUp, AlertTriangle, BarChart3, Briefcase, Star, Newspaper, Menu, X, LogOut, Brain } from 'lucide-react'
+import { Home, TrendingUp, AlertTriangle, BarChart3, Briefcase, Star, Newspaper, Menu, X, LogOut, Brain, Grid, GitCompare, Bell, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment'
+type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment' | 'heatmap' | 'comparison' | 'alerts' | 'settings'
 
 interface SidebarProps {
   activeTab: Tab
@@ -23,12 +23,16 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   const menuItems = [
     { id: 'overview' as Tab, label: 'Market Overview', icon: Home },
+    { id: 'heatmap' as Tab, label: 'Market Heatmap', icon: Grid },
     { id: 'pump-dump' as Tab, label: 'Pump & Dump', icon: AlertTriangle },
     { id: 'sentiment' as Tab, label: 'Sentiment Analysis', icon: Brain },
     { id: 'charts' as Tab, label: 'Charts', icon: BarChart3 },
+    { id: 'comparison' as Tab, label: 'Coin Comparison', icon: GitCompare },
     { id: 'portfolio' as Tab, label: 'Portfolio', icon: Briefcase },
     { id: 'watchlist' as Tab, label: 'Watchlist', icon: Star },
+    { id: 'alerts' as Tab, label: 'Price Alerts', icon: Bell },
     { id: 'news' as Tab, label: 'News', icon: Newspaper },
+    { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ]
 
   return (
@@ -59,9 +63,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       >
         <div className="p-6 border-b border-white/10">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Crypto Dashboard
+            Quantro
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Pump & Dump Detection</p>
+          <p className="text-sm text-gray-400 mt-1">Crypto Analytics</p>
         </div>
 
         <nav className="p-4 space-y-2">

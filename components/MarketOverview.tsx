@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Search } from 'lucide-react'
+import TrendingCoins from './TrendingCoins'
 import { fetchTopCoins, searchCoins, Coin } from '@/lib/api'
 
 export default function MarketOverview() {
@@ -265,6 +266,13 @@ export default function MarketOverview() {
           </table>
         </div>
       </div>
+
+      {/* Trending Coins Widget */}
+      {!debouncedSearch && (
+        <div className="mt-6">
+          <TrendingCoins />
+        </div>
+      )}
     </div>
   )
 }

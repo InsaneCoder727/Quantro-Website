@@ -9,8 +9,13 @@ import Portfolio from './Portfolio'
 import Watchlist from './Watchlist'
 import NewsFeed from './NewsFeed'
 import SentimentAnalysis from './SentimentAnalysis'
+import MarketHeatmap from './MarketHeatmap'
+import CoinComparison from './CoinComparison'
+import PriceAlerts from './PriceAlerts'
+import TrendingCoins from './TrendingCoins'
+import SettingsPage from './SettingsPage'
 
-type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment'
+type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment' | 'heatmap' | 'comparison' | 'alerts' | 'settings'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -31,6 +36,14 @@ export default function Dashboard() {
         return <NewsFeed />
       case 'sentiment':
         return <SentimentAnalysis />
+      case 'heatmap':
+        return <MarketHeatmap />
+      case 'comparison':
+        return <CoinComparison />
+      case 'alerts':
+        return <PriceAlerts />
+      case 'settings':
+        return <SettingsPage />
       default:
         return <MarketOverview />
     }
