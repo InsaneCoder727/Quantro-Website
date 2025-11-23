@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
       // Try TOTP if email didn't work or if app method is set
       if (!isValid && (preferredMethod === 'app' || !preferredMethod)) {
         if (user.two_factor_secret) {
-          const speakeasy = await import('speakeasy')
+          const speakeasyModule = await import('speakeasy')
+          const speakeasy = speakeasyModule.default || speakeasyModule
           const totpValid = speakeasy.totp.verify({
             secret: user.two_factor_secret,
             encoding: 'base32',
