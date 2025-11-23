@@ -1,10 +1,10 @@
 'use client'
 
-import { Home, TrendingUp, AlertTriangle, BarChart3, Briefcase, Star, Newspaper, Menu, X, LogOut } from 'lucide-react'
+import { Home, TrendingUp, AlertTriangle, BarChart3, Briefcase, Star, Newspaper, Menu, X, LogOut, Brain } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news'
+type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment'
 
 interface SidebarProps {
   activeTab: Tab
@@ -24,6 +24,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const menuItems = [
     { id: 'overview' as Tab, label: 'Market Overview', icon: Home },
     { id: 'pump-dump' as Tab, label: 'Pump & Dump', icon: AlertTriangle },
+    { id: 'sentiment' as Tab, label: 'Sentiment Analysis', icon: Brain },
     { id: 'charts' as Tab, label: 'Charts', icon: BarChart3 },
     { id: 'portfolio' as Tab, label: 'Portfolio', icon: Briefcase },
     { id: 'watchlist' as Tab, label: 'Watchlist', icon: Star },

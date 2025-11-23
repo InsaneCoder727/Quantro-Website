@@ -8,8 +8,9 @@ import PriceChart from './PriceChart'
 import Portfolio from './Portfolio'
 import Watchlist from './Watchlist'
 import NewsFeed from './NewsFeed'
+import SentimentAnalysis from './SentimentAnalysis'
 
-type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news'
+type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -28,6 +29,8 @@ export default function Dashboard() {
         return <Watchlist />
       case 'news':
         return <NewsFeed />
+      case 'sentiment':
+        return <SentimentAnalysis />
       default:
         return <MarketOverview />
     }
