@@ -149,7 +149,7 @@ export default function Watchlist() {
 
   const getAllWatchlistCoinIds = () => {
     const groupCoinIds = groups.flatMap(g => g.coinIds)
-    return [...new Set([...uncategorizedCoins, ...groupCoinIds])]
+    return Array.from(new Set([...uncategorizedCoins, ...groupCoinIds]))
   }
 
   const getVisibleCoins = () => {
