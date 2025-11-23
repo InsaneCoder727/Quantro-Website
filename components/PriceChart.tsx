@@ -14,6 +14,21 @@ import {
 } from 'recharts'
 import { fetchTopCoins, fetchCoinHistory, Coin } from '@/lib/api'
 
+// Type definition for price history entry
+type PriceHistoryEntry = [timestamp: number, price: number]
+
+// Type guard to ensure the entry has exactly two numbers
+const isValidPriceHistoryEntry = (entry: unknown): entry is PriceHistoryEntry => {
+  return (
+    Array.isArray(entry) &&
+    entry.length === 2 &&
+    typeof entry[0] === 'number' &&
+    typeof entry[1] === 'number' &&
+    !isNaN(entry[0]) &&
+    !isNaN(entry[1])
+  )
+}
+
 export default function PriceChart() {
   const [selectedCoin, setSelectedCoin] = useState<string>('bitcoin')
   const [timeframe, setTimeframe] = useState<string>('7')
@@ -34,10 +49,16 @@ export default function PriceChart() {
     }
   }, [coins, selectedCoin])
 
-  const chartData = priceHistory.map(([timestamp, price]: [number, number]) => ({
-    date: new Date(timestamp).toLocaleDateString(),
-    price: price,
-  }))
+  // Type-safe mapping with validation and defaults
+  const chartData = priceHistory
+    .filter(isValidPriceHistoryEntry)
+    .map((entry: PriceHistoryEntry) => {
+      const [timestamp, price] = entry
+      return {
+        date: new Date(timestamp).toLocaleDateString(),
+        price: price,
+      }
+    })
 
   const selectedCoinData = coins.find((c: Coin) => c.id === selectedCoin)
 
