@@ -18,3 +18,22 @@
   }
 }
 
+/* Dropdown styling for better visibility */
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+select:not([disabled]) {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  color: #ffffff !important;
+}
+
+select:not([disabled]):hover {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+}
+

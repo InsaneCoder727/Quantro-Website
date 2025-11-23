@@ -20,7 +20,10 @@ export default function Portfolio() {
     buyPrice: '',
   })
 
-  const { data: coins = [] } = useSWR('top-coins', fetchTopCoins)
+  const { data: coins = [], isLoading: coinsLoading } = useSWR('top-coins-30', () => fetchTopCoins(30), {
+    refreshInterval: 60000,
+    revalidateOnFocus: false,
+  })
 
   useEffect(() => {
     // Load from localStorage
@@ -150,11 +153,13 @@ export default function Portfolio() {
                 onChange={(e) =>
                   setNewHolding({ ...newHolding, coinId: e.target.value })
                 }
-                className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={coinsLoading || coins.length === 0}
+                className="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed [&>option]:bg-black [&>option]:text-white"
+                style={{ colorScheme: 'dark' }}
               >
-                <option value="">Select coin</option>
-                {coins.slice(0, 50).map((coin: Coin) => (
-                  <option key={coin.id} value={coin.id}>
+                <option value="">{coinsLoading ? 'Loading coins...' : coins.length === 0 ? 'No coins available' : 'Select coin'}</option>
+                {coins.map((coin: Coin) => (
+                  <option key={coin.id} value={coin.id} className="bg-black text-white">
                     {coin.name} ({coin.symbol.toUpperCase()})
                   </option>
                 ))}

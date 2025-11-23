@@ -6,8 +6,11 @@ import { AlertTriangle, TrendingUp, TrendingDown, Activity, DollarSign } from 'l
 import { fetchTopCoins, detectPumpAndDump, PumpDumpAlert } from '@/lib/api'
 
 export default function PumpDumpDetector() {
-  const { data: coins = [], isLoading } = useSWR('top-coins', fetchTopCoins, {
+  const { data: coins = [], isLoading, error } = useSWR('top-coins-30', () => fetchTopCoins(30), {
     refreshInterval: 60000, // Refresh every minute
+    revalidateOnFocus: false,
+    errorRetryCount: 3,
+    errorRetryInterval: 2000,
   })
 
   const [alerts, setAlerts] = useState<PumpDumpAlert[]>([])
@@ -33,8 +36,62 @@ export default function PumpDumpDetector() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <AlertTriangle className="text-orange-500" size={32} />
+            Pump & Dump Detection
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Real-time analysis of suspicious market activity
+          </p>
+        </div>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <AlertTriangle className="text-orange-500" size={32} />
+            Pump & Dump Detection
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Real-time analysis of suspicious market activity
+          </p>
+        </div>
+        <div className="card text-center py-12 bg-yellow-500/10 border-yellow-500/30">
+          <p className="text-yellow-400 mb-4">Unable to load data</p>
+          <p className="text-sm text-gray-400">Please check your connection and try again.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (coins.length === 0 && !isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <AlertTriangle className="text-orange-500" size={32} />
+            Pump & Dump Detection
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Real-time analysis of suspicious market activity
+          </p>
+        </div>
+        <div className="card text-center py-12">
+          <AlertTriangle className="mx-auto text-gray-500 mb-4" size={48} />
+          <h3 className="text-xl font-semibold mb-2">Unable to Load Data</h3>
+          <p className="text-gray-400">
+            Please check your connection and try again.
+          </p>
+        </div>
       </div>
     )
   }
@@ -63,6 +120,9 @@ export default function PumpDumpDetector() {
           <h3 className="text-xl font-semibold mb-2">No Alerts Detected</h3>
           <p className="text-gray-400">
             The market appears stable. No pump-and-dump patterns detected.
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Analyzed {coins.length} coins. Lower threshold coins may show alerts.
           </p>
         </div>
       ) : (

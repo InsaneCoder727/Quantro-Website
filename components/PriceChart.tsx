@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import {
   LineChart,
@@ -18,11 +18,21 @@ export default function PriceChart() {
   const [selectedCoin, setSelectedCoin] = useState<string>('bitcoin')
   const [timeframe, setTimeframe] = useState<string>('7')
 
-  const { data: coins = [] } = useSWR('top-coins', fetchTopCoins)
-  const { data: priceHistory = [] } = useSWR(
+  const { data: coins = [], isLoading: coinsLoading, error: coinsError } = useSWR('top-coins-30', () => fetchTopCoins(30), {
+    refreshInterval: 60000,
+    revalidateOnFocus: false,
+  })
+  const { data: priceHistory = [], isLoading: historyLoading } = useSWR(
     selectedCoin ? `${selectedCoin}-${timeframe}` : null,
     () => fetchCoinHistory(selectedCoin, parseInt(timeframe))
   )
+
+  // Set default coin when coins load
+  useEffect(() => {
+    if (coins.length > 0 && (!selectedCoin || !coins.find((c: Coin) => c.id === selectedCoin))) {
+      setSelectedCoin(coins[0].id)
+    }
+  }, [coins, selectedCoin])
 
   const chartData = priceHistory.map(([timestamp, price]: [number, number]) => ({
     date: new Date(timestamp).toLocaleDateString(),
@@ -30,6 +40,39 @@ export default function PriceChart() {
   }))
 
   const selectedCoinData = coins.find((c: Coin) => c.id === selectedCoin)
+
+  if (coinsLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Price Charts</h1>
+          <p className="text-gray-400">Interactive price history visualization</p>
+        </div>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (coinsError || coins.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Price Charts</h1>
+          <p className="text-gray-400">Interactive price history visualization</p>
+        </div>
+        <div className="card text-center py-12">
+          <p className="text-gray-400 mb-2">
+            {coinsError ? 'Unable to load coins' : 'No coins available'}
+          </p>
+          {coinsError && (
+            <p className="text-sm text-gray-500">Please refresh the page to try again.</p>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -48,13 +91,21 @@ export default function PriceChart() {
             <select
               value={selectedCoin}
               onChange={(e) => setSelectedCoin(e.target.value)}
-              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={coinsLoading || coins.length === 0}
+              className="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed [&>option]:bg-black [&>option]:text-white"
+              style={{ colorScheme: 'dark' }}
             >
-              {coins.slice(0, 20).map((coin: Coin) => (
-                <option key={coin.id} value={coin.id}>
-                  {coin.name} ({coin.symbol.toUpperCase()})
-                </option>
-              ))}
+              {coinsLoading ? (
+                <option className="bg-black text-white">Loading coins...</option>
+              ) : coins.length === 0 ? (
+                <option className="bg-black text-white">No coins available</option>
+              ) : (
+                coins.slice(0, 50).map((coin: Coin) => (
+                  <option key={coin.id} value={coin.id} className="bg-black text-white">
+                    {coin.name} ({coin.symbol.toUpperCase()})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 

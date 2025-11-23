@@ -1,7 +1,8 @@
 'use client'
 
-import { Home, TrendingUp, AlertTriangle, BarChart3, Briefcase, Star, Newspaper, Menu, X } from 'lucide-react'
+import { Home, TrendingUp, AlertTriangle, BarChart3, Briefcase, Star, Newspaper, Menu, X, LogOut } from 'lucide-react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news'
 
@@ -12,6 +13,13 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const router = useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  }
 
   const menuItems = [
     { id: 'overview' as Tab, label: 'Market Overview', icon: Home },
@@ -43,7 +51,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 glass z-40
+          fixed top-0 left-0 h-full w-64 glass z-40 pb-20
           transform transition-transform duration-300
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
@@ -84,9 +92,13 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-          <p className="text-xs text-gray-400 text-center">
-            Risk Analysis Dashboard
-          </p>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+          >
+            <LogOut size={20} />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
     </>

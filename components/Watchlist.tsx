@@ -7,7 +7,10 @@ import { fetchTopCoins, Coin } from '@/lib/api'
 
 export default function Watchlist() {
   const [watchlist, setWatchlist] = useState<string[]>([])
-  const { data: coins = [] } = useSWR('top-coins', fetchTopCoins)
+  const { data: coins = [], isLoading } = useSWR('top-coins-30', () => fetchTopCoins(30), {
+    refreshInterval: 60000,
+    revalidateOnFocus: false,
+  })
 
   useEffect(() => {
     const saved = localStorage.getItem('watchlist')
@@ -45,17 +48,22 @@ export default function Watchlist() {
         <p className="text-gray-400">Monitor your favorite cryptocurrencies</p>
       </div>
 
-      {watchlistCoins.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      ) : watchlistCoins.length === 0 ? (
         <div className="card text-center py-12">
           <Star className="mx-auto text-gray-500 mb-4" size={48} />
           <h3 className="text-xl font-semibold mb-2">Your Watchlist is Empty</h3>
           <p className="text-gray-400 mb-6">
             Add coins from the market overview to track them here
           </p>
-          <div className="card bg-white/5 max-w-2xl mx-auto">
-            <h4 className="font-semibold mb-4">Top Coins (Click to Add)</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {coins.slice(0, 12).map((coin: Coin) => (
+          {coins.length > 0 ? (
+            <div className="card bg-white/5 max-w-2xl mx-auto">
+              <h4 className="font-semibold mb-4">Top Coins (Click to Add)</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {coins.slice(0, 12).map((coin: Coin) => (
                 <button
                   key={coin.id}
                   onClick={() => addToWatchlist(coin.id)}
@@ -71,9 +79,12 @@ export default function Watchlist() {
                   </div>
                   <div className="text-xs text-gray-400">{coin.name}</div>
                 </button>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-gray-400">Loading coins...</p>
+          )}
         </div>
       ) : (
         <div className="grid gap-4">

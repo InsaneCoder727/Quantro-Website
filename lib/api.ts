@@ -1,6 +1,15 @@
 import axios from 'axios'
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3'
+const CRYPTOCOMPARE_API = 'https://min-api.cryptocompare.com/data'
+
+// Create axios instance with better error handling
+const apiClient = axios.create({
+  timeout: 10000,
+  headers: {
+    'Accept': 'application/json',
+  },
+})
 
 export interface Coin {
   id: string
@@ -33,6 +42,18 @@ export interface Coin {
   }
 }
 
+export interface NewsArticle {
+  id: string
+  title: string
+  description: string
+  url: string
+  publishedAt: string
+  source: string
+  image?: string
+  categories?: string
+  tags?: string
+}
+
 export interface PumpDumpAlert {
   coin: Coin
   riskScore: number
@@ -46,14 +67,63 @@ export interface PumpDumpAlert {
   timestamp: Date
 }
 
-export const fetchTopCoins = async (limit: number = 100): Promise<Coin[]> => {
+export const fetchTopCoins = async (limit: number = 10): Promise<Coin[]> => {
   try {
-    const response = await axios.get(
-      `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${limit}&page=1&sparkline=true&price_change_percentage=24h`
-    )
-    return response.data
-  } catch (error) {
-    console.error('Error fetching coins:', error)
+    // Use Next.js API route to avoid CORS issues
+    const response = await fetch(`/api/coins?limit=${limit}`, {
+      cache: 'no-store', // Always get fresh data
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('API error:', response.status, errorData)
+      throw new Error(`API error: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    if (Array.isArray(data) && data.length > 0) {
+      return data
+    }
+    
+    if (data.error) {
+      console.error('API error:', data.error)
+      throw new Error(data.error)
+    }
+    
+    return []
+  } catch (error: any) {
+    console.error('Error fetching coins:', error?.message || error)
+    // Re-throw error so SWR can handle it properly
+    throw error
+  }
+}
+
+export const searchCoins = async (query: string): Promise<Coin[]> => {
+  try {
+    if (!query || query.length < 2) {
+      return []
+    }
+
+    const response = await fetch(`/api/coins/search?q=${encodeURIComponent(query)}`, {
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Search API error:', response.status, errorData)
+      return []
+    }
+
+    const data = await response.json()
+
+    if (Array.isArray(data) && data.length > 0) {
+      return data
+    }
+
+    return []
+  } catch (error: any) {
+    console.error('Error searching coins:', error?.message || error)
     return []
   }
 }
@@ -63,13 +133,27 @@ export const fetchCoinHistory = async (
   days: number = 7
 ): Promise<number[][]> => {
   try {
-    const response = await axios.get(
-      `${COINGECKO_API}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
-    )
-    return response.data.prices || []
-  } catch (error) {
-    console.error('Error fetching coin history:', error)
+    // Use Next.js API route to avoid CORS issues
+    const response = await fetch(`/api/coins/${coinId}/history?days=${days}`, {
+      cache: 'no-store',
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('History API error:', response.status, errorData)
+      throw new Error(`API error: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    if (data && data.prices && Array.isArray(data.prices)) {
+      return data.prices
+    }
+    
     return []
+  } catch (error: any) {
+    console.error('Error fetching coin history:', error?.message || error)
+    throw error
   }
 }
 
@@ -114,8 +198,9 @@ export const detectPumpAndDump = (coins: Coin[]): PumpDumpAlert[] => {
     if (coin.market_cap < 10000000) riskScore += 10
     else if (coin.market_cap < 50000000) riskScore += 5
 
+    // Lower threshold to show more alerts (for demo purposes)
     // Only flag coins with significant risk
-    if (riskScore >= 30) {
+    if (riskScore >= 20) {
       alerts.push({
         coin,
         riskScore,
@@ -149,13 +234,35 @@ const calculateVolumeSpike = (coin: Coin): number => {
   return ((actualVolume - expectedVolume) / expectedVolume) * 100
 }
 
-export const fetchCryptoNews = async () => {
+export const fetchCryptoNews = async (limit: number = 10): Promise<NewsArticle[]> => {
   try {
-    // Using CryptoCompare or NewsAPI - for now return mock data
-    // In production, integrate with a real news API
+    // Using CryptoCompare News API
+    const response = await apiClient.get(
+      `${CRYPTOCOMPARE_API}/v2/news/`,
+      {
+        params: {
+          lang: 'EN',
+        },
+      }
+    )
+    
+    if (response.data && response.data.Data && Array.isArray(response.data.Data)) {
+      return response.data.Data.slice(0, limit).map((article: any, index: number) => ({
+        id: article.id?.toString() || `news-${index}`,
+        title: article.title || 'Untitled',
+        description: article.body || article.title || '',
+        url: article.url || article.guid || '#',
+        publishedAt: new Date(article.published_on * 1000).toISOString(),
+        source: article.source || 'Unknown',
+        image: article.imageurl || undefined,
+        categories: article.categories,
+        tags: article.tags,
+      }))
+    }
     return []
-  } catch (error) {
-    console.error('Error fetching news:', error)
+  } catch (error: any) {
+    console.error('Error fetching news:', error?.message || error)
+    // Fallback to empty array
     return []
   }
 }
