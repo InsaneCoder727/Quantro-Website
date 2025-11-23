@@ -38,7 +38,15 @@ export default function LoginPage() {
         }),
       })
 
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        // If response is not JSON, it's likely a server error
+        setError(`Server error: ${response.status} ${response.statusText}`)
+        setIsLoading(false)
+        return
+      }
 
       if (response.ok) {
         // Check if 2FA is required
@@ -74,8 +82,9 @@ export default function LoginPage() {
       // Handle errors
       setError(data.error || 'Login failed. Please check your credentials.')
       setRequires2FA(false)
-    } catch (err) {
-      setError('Network error. Please try again.')
+    } catch (err: any) {
+      console.error('Login error:', err)
+      setError(err.message || 'Network error. Please check if the server is running and try again.')
       setRequires2FA(false)
     } finally {
       setIsLoading(false)

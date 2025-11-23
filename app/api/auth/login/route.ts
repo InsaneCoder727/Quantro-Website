@@ -3,7 +3,17 @@ import { getUserByEmail, comparePassword, generateToken, createSession } from '@
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, twoFactorCode } = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      )
+    }
+
+    const { email, password, twoFactorCode } = body
 
     if (!email || !password) {
       return NextResponse.json(
@@ -105,10 +115,13 @@ export async function POST(request: NextRequest) {
         two_factor_enabled: user.two_factor_enabled,
       },
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      },
       { status: 500 }
     )
   }
