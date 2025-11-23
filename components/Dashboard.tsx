@@ -14,8 +14,10 @@ import CoinComparison from './CoinComparison'
 import PriceAlerts from './PriceAlerts'
 import TrendingCoins from './TrendingCoins'
 import SettingsPage from './SettingsPage'
+import CoinScreener from './CoinScreener'
+import MarketCalendar from './MarketCalendar'
 
-type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment' | 'heatmap' | 'comparison' | 'alerts' | 'settings'
+type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment' | 'heatmap' | 'comparison' | 'alerts' | 'settings' | 'screener' | 'calendar'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -44,6 +46,10 @@ export default function Dashboard() {
         return <PriceAlerts />
       case 'settings':
         return <SettingsPage />
+      case 'screener':
+        return <CoinScreener />
+      case 'calendar':
+        return <MarketCalendar />
       default:
         return <MarketOverview />
     }
