@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Plus, Trash2, TrendingUp, TrendingDown, Download, PieChart as PieChartIcon, BarChart3 } from 'lucide-react'
 import useSWR from 'swr'
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts'
 import { fetchTopCoins, Coin } from '@/lib/api'
 
 interface Holding {
