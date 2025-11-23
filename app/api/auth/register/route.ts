@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-interface User {
-  id: string
-  name: string
-  email: string
-}
-
-// Mock user storage (in production, use a database)
-const users: Array<{ email: string; password: string; user: User }> = []
+import { createUser, getUserByEmail, hashPassword } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,15 +12,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'Password must be at least 8 characters' },
         { status: 400 }
       )
     }
 
-    // Check if user already exists (in production, check database)
-    const existingUser = users.find(u => u.email === email)
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user already exists
+    const existingUser = await getUserByEmail(email)
     
     if (existingUser) {
       return NextResponse.json(
@@ -37,30 +38,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new user (in production, hash password and save to database)
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name: name,
-      email: email,
-    }
+    // Hash password
+    const passwordHash = await hashPassword(password)
 
-    users.push({
-      email,
-      password, // In production, store hashed password
-      user: newUser,
-    })
+    // Create new user
+    const newUser = await createUser(email.toLowerCase(), name, passwordHash)
 
-    const token = Buffer.from(JSON.stringify({ email, userId: newUser.id })).toString('base64')
+    // Generate token
+    const { generateToken } = await import('@/lib/auth')
+    const token = generateToken(newUser.id, newUser.email)
+
+    // Create session
+    const { createSession } = await import('@/lib/auth')
+    await createSession(newUser.id, token)
 
     return NextResponse.json({
       token,
-      user: newUser,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        two_factor_enabled: newUser.two_factor_enabled,
+      },
     })
   } catch (error) {
+    console.error('Registration error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
-

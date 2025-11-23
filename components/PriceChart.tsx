@@ -162,9 +162,9 @@ export default function PriceChart() {
 
   if (coinsLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Price Charts</h1>
+      <div className="space-y-6 animate-fade-in">
+        <div className="animate-fade-in-up">
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Price Charts</h1>
           <p className="text-gray-400">Interactive price history visualization</p>
         </div>
         <div className="flex items-center justify-center h-96">
@@ -194,9 +194,9 @@ export default function PriceChart() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Price Charts</h1>
+    <div className="space-y-6 animate-fade-in">
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Price Charts</h1>
         <p className="text-gray-400">Interactive price history</p>
       </div>
 

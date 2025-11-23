@@ -197,8 +197,8 @@ export default function Portfolio() {
       </div>
 
       {/* Portfolio Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in-up">
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="text-gray-400 text-sm mb-2">Total Value</div>
           <div className="text-2xl font-bold">
             ${portfolioData.totalValue.toLocaleString(undefined, {
@@ -207,7 +207,7 @@ export default function Portfolio() {
             })}
           </div>
         </div>
-        <div className="card">
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="text-gray-400 text-sm mb-2">Total Cost</div>
           <div className="text-2xl font-bold">
             ${portfolioData.totalCost.toLocaleString(undefined, {
@@ -216,7 +216,7 @@ export default function Portfolio() {
             })}
           </div>
         </div>
-        <div className="card">
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="text-gray-400 text-sm mb-2">Profit/Loss</div>
           <div
             className={`text-2xl font-bold flex items-center gap-2 ${

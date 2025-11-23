@@ -2,8 +2,28 @@
 
 import { useState, useEffect } from 'react'
 import { Settings, Bell, Moon, Sun, RefreshCw, Download, Trash2 } from 'lucide-react'
+import TwoFactorSetup from './TwoFactorSetup'
+import AuthPrompt from './AuthPrompt'
 
 export default function SettingsPage() {
+  const [user, setUser] = useState<any>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('auth_token')
+      setIsLoggedIn(!!token)
+      if (token) {
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+          setUser(JSON.parse(userStr))
+        }
+      }
+    }
+    checkAuth()
+    window.addEventListener('storage', checkAuth)
+    return () => window.removeEventListener('storage', checkAuth)
+  }, [])
   const [notifications, setNotifications] = useState({
     priceAlerts: true,
     pumpDump: true,
@@ -59,6 +79,11 @@ export default function SettingsPage() {
       localStorage.removeItem('price_alerts')
       alert('All data has been cleared.')
     }
+  }
+
+  // Settings page requires authentication for security features
+  if (!isLoggedIn) {
+    return <AuthPrompt feature="Settings" description="Create an account to access account settings, 2FA, and security preferences" />
   }
 
   return (
@@ -146,6 +171,9 @@ export default function SettingsPage() {
           </select>
         </div>
       </div>
+
+      {/* Two-Factor Authentication */}
+      {user && <TwoFactorSetup user={user} />}
 
       {/* Data Management */}
       <div className="card">

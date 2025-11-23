@@ -98,29 +98,29 @@ export default function MarketOverview() {
   const losers = coins.filter(coin => (coin.price_change_percentage_24h || 0) < 0).length
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 animate-fade-in-up">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Market Overview</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Market Overview</h1>
           <p className="text-gray-400">Top 30 cryptocurrencies by market cap</p>
         </div>
         
         {/* Search Bar */}
-        <div className="relative max-w-md w-full">
+        <div className="relative max-w-md w-full animate-slide-in-right">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
             placeholder="Search coins..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all hover:bg-white/15"
           />
         </div>
       </div>
 
       {/* Market Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="flex items-center justify-between mb-2">
             <span className="text-gray-400 text-sm">Total Market Cap</span>
             <DollarSign size={20} className="text-gray-400" />
@@ -130,7 +130,7 @@ export default function MarketOverview() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="flex items-center justify-between mb-2">
             <span className="text-gray-400 text-sm">24h Volume</span>
             <BarChart3 size={20} className="text-gray-400" />
@@ -140,7 +140,7 @@ export default function MarketOverview() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="flex items-center justify-between mb-2">
             <span className="text-gray-400 text-sm">Gainers (24h)</span>
             <TrendingUp size={20} className="text-green-400" />
@@ -148,7 +148,7 @@ export default function MarketOverview() {
           <div className="text-2xl font-bold text-green-400">{gainers}</div>
         </div>
 
-        <div className="card">
+        <div className="card hover:scale-105 transition-transform duration-300">
           <div className="flex items-center justify-between mb-2">
             <span className="text-gray-400 text-sm">Losers (24h)</span>
             <TrendingDown size={20} className="text-red-400" />
@@ -192,10 +192,11 @@ export default function MarketOverview() {
             </thead>
             <tbody>
               {coins.length > 0 ? (
-                coins.map((coin) => (
+                coins.map((coin, index) => (
                   <tr
                     key={coin.id}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    className="border-b border-white/5 hover:bg-white/5 transition-all duration-200 animate-fade-in-up"
+                    style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <td className="py-4 px-4 text-gray-400">
                       {coin.market_cap_rank || '-'}

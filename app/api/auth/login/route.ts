@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// In production, use a real database and proper authentication
-// This is a demo implementation
-
-interface User {
-  id: string
-  name: string
-  email: string
-}
-
-// Mock user storage (in production, use a database)
-const users: Array<{ email: string; password: string; user: User }> = []
+import { getUserByEmail, comparePassword, generateToken, createSession } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, twoFactorCode } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -23,38 +12,103 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user (in production, check database)
-    const userRecord = users.find(u => u.email === email && u.password === password)
+    // Find user
+    const user = await getUserByEmail(email.toLowerCase())
 
-    if (!userRecord) {
-      // For demo purposes, accept any login
-      // In production, validate against database with hashed passwords
-      const demoUser: User = {
-        id: `user-${Date.now()}`,
-        name: email.split('@')[0],
-        email: email,
-      }
-
-      const token = Buffer.from(JSON.stringify({ email, userId: demoUser.id })).toString('base64')
-
-      return NextResponse.json({
-        token,
-        user: demoUser,
-      })
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      )
     }
 
-    // Existing user
-    const token = Buffer.from(JSON.stringify({ email, userId: userRecord.user.id })).toString('base64')
+    // Verify password
+    const isPasswordValid = await comparePassword(password, user.password_hash)
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      )
+    }
+
+    // Check if 2FA is enabled
+    if (user.two_factor_enabled) {
+      if (!twoFactorCode) {
+        // Don't force a method - let user choose
+        // Check if user has a preferred method set
+        const userRecord = await getUserByEmail(email.toLowerCase())
+        const preferredMethod = (userRecord as any)?.two_factor_method
+        
+        return NextResponse.json(
+          { 
+            requires2FA: true,
+            message: 'Two-factor authentication required. Choose your verification method.',
+            preferredMethod: preferredMethod || null, // Suggest their preferred method if set
+          },
+          { status: 200 }
+        )
+      }
+
+      // Verify 2FA code - try both methods
+      const userRecord = await getUserByEmail(email.toLowerCase())
+      const preferredMethod = (userRecord as any)?.two_factor_method
+
+      let isValid = false
+
+      // Try email first (if email method is set) or try both
+      if (!preferredMethod || preferredMethod === 'email') {
+        const { verifyEmailCode } = await import('@/lib/email-codes')
+        const result = verifyEmailCode(user.email, twoFactorCode)
+        if (result.valid) {
+          isValid = true
+        }
+      }
+
+      // Try TOTP if email didn't work or if app method is set
+      if (!isValid && (preferredMethod === 'app' || !preferredMethod)) {
+        if (user.two_factor_secret) {
+          const speakeasy = await import('speakeasy')
+          const totpValid = speakeasy.totp.verify({
+            secret: user.two_factor_secret,
+            encoding: 'base32',
+            token: twoFactorCode,
+            window: 2, // Allow 2 time steps before/after
+          })
+          if (totpValid) {
+            isValid = true
+          }
+        }
+      }
+
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Invalid two-factor authentication code' },
+          { status: 401 }
+        )
+      }
+    }
+
+    // Generate token
+    const token = generateToken(user.id, user.email)
+
+    // Create session
+    await createSession(user.id, token)
 
     return NextResponse.json({
       token,
-      user: userRecord.user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        two_factor_enabled: user.two_factor_enabled,
+      },
     })
   } catch (error) {
+    console.error('Login error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
-

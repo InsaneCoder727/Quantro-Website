@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react'
+import Logo from '@/components/Logo'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -24,8 +25,8 @@ export default function RegisterPage() {
       return
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters')
       return
     }
 
@@ -69,8 +70,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="glass rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl">C</span>
+            <div className="flex justify-center mb-4">
+              <Logo size="lg" showText={true} />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
             <p className="text-gray-300">Join us to get started</p>

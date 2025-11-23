@@ -1,19 +1,91 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, TrendingUp, AlertTriangle, BarChart3, Shield, Zap, Globe, Star, Brain, GitCompare, Bell, Grid } from 'lucide-react'
+import { ArrowRight, TrendingUp, AlertTriangle, BarChart3, Shield, Zap, Globe, Star, Brain, GitCompare, Bell, Grid, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import Logo from '@/components/Logo'
+
+const testimonials = [
+  {
+    id: 1,
+    name: 'Alex Smith',
+    role: 'Day Trader',
+    initials: 'AS',
+    gradient: 'from-blue-500 to-purple-500',
+    text: '"Quantro saved me from making a huge mistake. The pump & dump detection alerted me before I lost thousands. Best investment in my crypto journey!"',
+    rating: 5,
+  },
+  {
+    id: 2,
+    name: 'Maria Johnson',
+    role: 'Crypto Investor',
+    initials: 'MJ',
+    gradient: 'from-green-500 to-emerald-500',
+    text: '"The real-time alerts and risk analysis have been game-changers. I can now make informed decisions with confidence. Highly recommended!"',
+    rating: 5,
+  },
+  {
+    id: 3,
+    name: 'Robert Chen',
+    role: 'Portfolio Manager',
+    initials: 'RC',
+    gradient: 'from-purple-500 to-pink-500',
+    text: '"Outstanding platform! The market overview and charts are incredibly detailed. It\'s like having a professional analyst at your fingertips."',
+    rating: 5,
+  },
+  {
+    id: 4,
+    name: 'Sarah Williams',
+    role: 'Crypto Trader',
+    initials: 'SW',
+    gradient: 'from-orange-500 to-red-500',
+    text: '"I\'ve tried many platforms, but Quantro\'s pump & dump detection is unmatched. It has saved me thousands in potential losses. Worth every penny!"',
+    rating: 5,
+  },
+  {
+    id: 5,
+    name: 'David Martinez',
+    role: 'Investment Advisor',
+    initials: 'DM',
+    gradient: 'from-cyan-500 to-blue-500',
+    text: '"The sentiment analysis and market calendar features help me stay ahead of the curve. This platform is a must-have for serious traders."',
+    rating: 5,
+  },
+]
 
 export default function HomePage() {
+  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    setIsVisible(true)
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const nextTestimonial = () => {
+    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+  }
+
+  const prevTestimonial = () => {
+    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       {/* Navigation Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-950/80 backdrop-blur-lg border-b border-white/10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Quantro
-            </div>
+            <Link href="/">
+              <Logo size="md" showText={true} />
+            </Link>
             <div className="hidden md:flex items-center gap-6">
+              <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
+                Dashboard
+              </Link>
               <Link href="#features" className="text-gray-300 hover:text-white transition-colors">
                 Features
               </Link>
@@ -35,10 +107,10 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
+      <section className={`pt-32 pb-20 px-6 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
         <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="animate-fade-in-up">
               <div className="inline-block px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-400 text-sm font-semibold mb-6">
                 Advanced Crypto Analytics Platform
               </div>
@@ -68,7 +140,7 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative animate-fade-in-right">
               <div className="glass rounded-2xl p-8 border border-white/20">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
@@ -150,7 +222,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div className="text-4xl font-bold text-purple-400 mb-1">10,000+</div>
-                <div className="text-lg font-semibold text-white mb-1">Active Users</div>
+                <div className="text-lg font-semibold text-white mb-1">People Reached</div>
                 <div className="text-sm text-gray-400">Trusted by traders and investors worldwide</div>
               </div>
             </div>
@@ -159,7 +231,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6">
+      <section id="features" className="py-20 px-6 scroll-mt-20">
         <div className="container mx-auto max-w-7xl">
           <div className="mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Powerful Features</h2>
@@ -326,68 +398,70 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="text-yellow-400 fill-yellow-400" size={20} />
+          {/* Carousel */}
+          <div className="relative max-w-5xl mx-auto">
+            <div className="overflow-hidden rounded-2xl">
+              <div 
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${currentTestimonial * 100}%)` }}
+              >
+                {testimonials.map((testimonial, index) => (
+                  <div key={testimonial.id} className="min-w-full px-4">
+                    <div className="card">
+                      <Quote className="text-blue-400 mb-4" size={32} />
+                      <div className="flex items-center gap-1 mb-4">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="text-yellow-400 fill-yellow-400" size={20} />
+                        ))}
+                      </div>
+                      <p className="text-gray-300 mb-6 leading-relaxed text-lg">
+                        {testimonial.text}
+                      </p>
+                      <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold`}>
+                          {testimonial.initials}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white">{testimonial.name}</div>
+                          <div className="text-sm text-gray-400">{testimonial.role}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "Quantro saved me from making a huge mistake. The pump & dump detection alerted me before I lost thousands. 
-                Best investment in my crypto journey!"
-              </p>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                  AS
-                </div>
-                <div>
-                  <div className="font-semibold text-white">Alex Smith</div>
-                  <div className="text-sm text-gray-400">Day Trader</div>
-                </div>
               </div>
             </div>
 
-            <div className="card">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="text-yellow-400 fill-yellow-400" size={20} />
-                ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "The real-time alerts and risk analysis have been game-changers. I can now make informed decisions with confidence. 
-                Highly recommended!"
-              </p>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white font-bold">
-                  MJ
-                </div>
-                <div>
-                  <div className="font-semibold text-white">Maria Johnson</div>
-                  <div className="text-sm text-gray-400">Crypto Investor</div>
-                </div>
-              </div>
-            </div>
+            {/* Navigation Buttons */}
+            <button
+              onClick={prevTestimonial}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all backdrop-blur-sm border border-white/20"
+              aria-label="Previous testimonial"
+            >
+              <ChevronLeft size={24} className="text-white" />
+            </button>
+            <button
+              onClick={nextTestimonial}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all backdrop-blur-sm border border-white/20"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight size={24} className="text-white" />
+            </button>
 
-            <div className="card">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="text-yellow-400 fill-yellow-400" size={20} />
-                ))}
-              </div>
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                "Outstanding platform! The market overview and charts are incredibly detailed. 
-                It's like having a professional analyst at your fingertips."
-              </p>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                  RC
-                </div>
-                <div>
-                  <div className="font-semibold text-white">Robert Chen</div>
-                  <div className="text-sm text-gray-400">Portfolio Manager</div>
-                </div>
-              </div>
+            {/* Dots Indicator */}
+            <div className="flex justify-center gap-2 mt-8">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentTestimonial(index)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    currentTestimonial === index
+                      ? 'bg-blue-400 w-8'
+                      : 'bg-white/20 hover:bg-white/40'
+                  }`}
+                  aria-label={`Go to testimonial ${index + 1}`}
+                />
+              ))}
             </div>
           </div>
         </div>

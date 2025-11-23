@@ -133,9 +133,9 @@ export default function SentimentAnalysis() {
   const Icon = sentimentData.icon
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+    <div className="space-y-6 animate-fade-in">
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
           <Brain className="text-purple-500" size={32} />
           Sentiment Analysis
         </h1>
@@ -143,7 +143,7 @@ export default function SentimentAnalysis() {
       </div>
 
       {/* Main Gauge Card */}
-      <div className={`card ${sentimentData.bgColor} border-2 ${sentimentData.borderColor}`}>
+      <div className={`card ${sentimentData.bgColor} border-2 ${sentimentData.borderColor} animate-scale-in`}>
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
             <Icon className={sentimentData.color} size={28} />

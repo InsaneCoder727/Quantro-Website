@@ -40,9 +40,9 @@ export default function NewsFeed() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+    <div className="space-y-6 animate-fade-in">
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
           <Newspaper className="text-blue-500" size={32} />
           Crypto News
         </h1>
@@ -50,7 +50,7 @@ export default function NewsFeed() {
       </div>
 
       {news.length === 0 ? (
-        <div className="card text-center py-12">
+        <div className="card text-center py-12 animate-scale-in">
           <Newspaper className="mx-auto text-gray-500 mb-4" size={48} />
           <h3 className="text-xl font-semibold mb-2">No News Available</h3>
           <p className="text-gray-400">
@@ -59,10 +59,11 @@ export default function NewsFeed() {
         </div>
       ) : (
         <div className="grid gap-6">
-          {news.map((newsItem) => (
+          {news.map((newsItem, index) => (
           <article
             key={newsItem.id}
-            className="card hover:bg-white/15 transition-colors"
+            className="card hover:bg-white/15 transition-all duration-300 hover:scale-[1.02] animate-fade-in-up"
+            style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className="flex flex-col md:flex-row gap-4">
               {newsItem.image && (

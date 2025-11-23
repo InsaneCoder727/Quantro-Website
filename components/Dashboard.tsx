@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Sidebar from './Sidebar'
+import DashboardHeader from './DashboardHeader'
+import GuestBanner from './GuestBanner'
 import MarketOverview from './MarketOverview'
 import PumpDumpDetector from './PumpDumpDetector'
 import PriceChart from './PriceChart'
@@ -16,6 +18,7 @@ import TrendingCoins from './TrendingCoins'
 import SettingsPage from './SettingsPage'
 import CoinScreener from './CoinScreener'
 import MarketCalendar from './MarketCalendar'
+import Chatbot from './Chatbot'
 
 type Tab = 'overview' | 'pump-dump' | 'charts' | 'portfolio' | 'watchlist' | 'news' | 'sentiment' | 'heatmap' | 'comparison' | 'alerts' | 'settings' | 'screener' | 'calendar'
 
@@ -59,8 +62,13 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="lg:pl-64">
-        <div className="p-6">{renderContent()}</div>
+        <GuestBanner />
+        <DashboardHeader />
+        <div className="p-6 animate-fade-in">
+          {renderContent()}
+        </div>
       </main>
+      <Chatbot />
     </div>
   )
 }

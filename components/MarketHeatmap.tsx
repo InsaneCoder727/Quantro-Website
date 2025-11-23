@@ -95,7 +95,7 @@ export default function MarketHeatmap() {
                 </div>
                 
                 {/* Tooltip on hover */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 hidden group-hover:block z-50 bg-gray-950 border-2 border-white/30 rounded-lg p-4 shadow-2xl min-w-[220px] backdrop-blur-md">
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 hidden group-hover:block z-50 bg-gray-950/95 backdrop-blur-lg border-2 border-white/40 rounded-lg p-4 shadow-2xl min-w-[220px]">
                   <div className="font-bold text-white text-base mb-2 pb-2 border-b border-white/20">{coin.name}</div>
                   <div className="text-sm text-gray-200 space-y-1.5">
                     <div className="flex justify-between">
