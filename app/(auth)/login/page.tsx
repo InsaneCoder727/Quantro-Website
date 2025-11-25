@@ -27,31 +27,27 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password,
         }),
       })
 
-      let data
-      try {
-        data = await response.json()
-      } catch (jsonError) {
-        setError(`Server error: ${response.status} ${response.statusText}`)
-        setIsLoading(false)
-        return
-      }
+      const data = await response.json()
 
       if (response.ok && data.token && data.user) {
+        // Store auth data
         localStorage.setItem('auth_token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // Redirect to dashboard
         router.push('/dashboard')
-        return
+      } else {
+        // Handle error
+        setError(data.error || 'Login failed. Please check your credentials.')
       }
-
-      setError(data.error || 'Login failed. Please check your credentials.')
     } catch (err: any) {
       console.error('Login error:', err)
-      setError(err.message || 'Network error. Please check if the server is running and try again.')
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -71,7 +67,7 @@ export default function LoginPage() {
 
           {error && (
             <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-2">
-              <AlertCircle size={20} className="text-red-400" />
+              <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
               <p className="text-red-200 text-sm">{error}</p>
             </div>
           )}
@@ -91,6 +87,7 @@ export default function LoginPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your email"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -109,6 +106,7 @@ export default function LoginPage() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your password"
+                  disabled={isLoading}
                 />
               </div>
             </div>

@@ -19,7 +19,9 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setError('')
+
+    // Client-side validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return
@@ -30,8 +32,12 @@ export default function RegisterPage() {
       return
     }
 
+    if (!formData.name.trim()) {
+      setError('Name is required')
+      return
+    }
+
     setIsLoading(true)
-    setError('')
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -40,26 +46,28 @@ export default function RegisterPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           password: formData.password,
         }),
       })
 
       const data = await response.json()
 
-      if (response.ok) {
-        // Store token
+      if (response.ok && data.token && data.user) {
+        // Store auth data
         localStorage.setItem('auth_token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
         // Redirect to dashboard
         router.push('/dashboard')
       } else {
+        // Handle error
         setError(data.error || 'Registration failed. Please try again.')
       }
-    } catch (err) {
-      setError('Network error. Please try again.')
+    } catch (err: any) {
+      console.error('Registration error:', err)
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -79,7 +87,7 @@ export default function RegisterPage() {
 
           {error && (
             <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-2">
-              <AlertCircle size={20} className="text-red-400" />
+              <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
               <p className="text-red-200 text-sm">{error}</p>
             </div>
           )}
@@ -99,6 +107,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your name"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -117,6 +126,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your email"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -134,7 +144,8 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Create a password"
+                  placeholder="Create a password (min. 8 characters)"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -153,6 +164,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Confirm your password"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -189,4 +201,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

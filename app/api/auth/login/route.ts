@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserByEmail, comparePassword, generateToken, createSession } from '@/lib/auth'
 
-// Route segment config
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function OPTIONS(request: NextRequest) {
+// Handle CORS preflight
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
@@ -18,27 +18,36 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    let body
+    // Parse request body
+    let body: any
     try {
       body = await request.json()
-    } catch (parseError) {
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Invalid request body' },
+        { error: 'Invalid JSON in request body' },
         { status: 400 }
       )
     }
 
     const { email, password } = body
 
-    if (!email || !password) {
+    // Validate input
+    if (!email || typeof email !== 'string') {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email is required' },
         { status: 400 }
       )
     }
 
-    // Find user
-    const user = await getUserByEmail(email.toLowerCase())
+    if (!password || typeof password !== 'string') {
+      return NextResponse.json(
+        { error: 'Password is required' },
+        { status: 400 }
+      )
+    }
+
+    // Find user by email
+    const user = await getUserByEmail(email.toLowerCase().trim())
 
     if (!user) {
       return NextResponse.json(
@@ -63,20 +72,30 @@ export async function POST(request: NextRequest) {
     // Create session
     await createSession(user.id, token)
 
-    return NextResponse.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
+    // Return success response
+    return NextResponse.json(
+      {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
       },
-    })
+      {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   } catch (error: any) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+        ...(process.env.NODE_ENV === 'development' && { details: error?.message }),
       },
       { status: 500 }
     )

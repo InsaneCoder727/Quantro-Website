@@ -1,20 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createUser, getUserByEmail, hashPassword } from '@/lib/auth'
+import { createUser, getUserByEmail, hashPassword, generateToken, createSession } from '@/lib/auth'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json()
-
-    if (!name || !email || !password) {
+    // Parse request body
+    let body: any
+    try {
+      body = await request.json()
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { error: 'Invalid JSON in request body' },
         { status: 400 }
       )
     }
 
-    if (password.length < 8) {
+    const { name, email, password } = body
+
+    // Validate input
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
+        { error: 'Name is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json(
+        { error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!password || typeof password !== 'string') {
+      return NextResponse.json(
+        { error: 'Password is required' },
         { status: 400 }
       )
     }
@@ -28,9 +62,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate password length
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters' },
+        { status: 400 }
+      )
+    }
+
     // Check if user already exists
-    const existingUser = await getUserByEmail(email)
-    
+    const normalizedEmail = email.toLowerCase().trim()
+    const existingUser = await getUserByEmail(normalizedEmail)
+
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
@@ -42,29 +85,39 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password)
 
     // Create new user
-    const newUser = await createUser(email.toLowerCase(), name, passwordHash)
+    const newUser = await createUser(normalizedEmail, name.trim(), passwordHash)
 
     // Generate token
-    const { generateToken } = await import('@/lib/auth')
     const token = generateToken(newUser.id, newUser.email)
 
     // Create session
-    const { createSession } = await import('@/lib/auth')
     await createSession(newUser.id, token)
 
-    return NextResponse.json({
-      token,
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        two_factor_enabled: newUser.two_factor_enabled,
+    // Return success response
+    return NextResponse.json(
+      {
+        token,
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+        },
       },
-    })
-  } catch (error) {
+      {
+        status: 201,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+  } catch (error: any) {
     console.error('Registration error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        ...(process.env.NODE_ENV === 'development' && { details: error?.message }),
+      },
       { status: 500 }
     )
   }

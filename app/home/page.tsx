@@ -233,11 +233,18 @@ export default function HomePage() {
                             <YAxis stroke="#9ca3af" style={{ fontSize: '10px' }} />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                backgroundColor: 'rgba(3, 7, 18, 0.98)',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
                                 borderRadius: '8px',
+                                color: '#ffffff',
+                                padding: '12px',
                               }}
-                              labelStyle={{ color: '#fff' }}
+                              labelStyle={{ 
+                                color: '#ffffff',
+                                fontWeight: '600',
+                                marginBottom: '4px',
+                              }}
+                              itemStyle={{ color: '#ffffff' }}
                             />
                             <Area
                               type="monotone"
@@ -342,11 +349,19 @@ export default function HomePage() {
                       <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          backgroundColor: 'rgba(3, 7, 18, 0.98)',
+                          border: '1px solid rgba(255, 255, 255, 0.3)',
                           borderRadius: '8px',
-                          color: '#fff',
+                          color: '#ffffff',
+                          padding: '12px',
                         }}
+                        labelStyle={{ 
+                          color: '#ffffff',
+                          fontWeight: '600',
+                          marginBottom: '4px',
+                        }}
+                        itemStyle={{ color: '#ffffff' }}
+                        formatter={(value: number) => [`${value.toFixed(2)}%`, '24h Change']}
                       />
                       <Bar 
                         dataKey="change" 
@@ -391,12 +406,19 @@ export default function HomePage() {
                       </Pie>
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          backgroundColor: 'rgba(3, 7, 18, 0.98)',
+                          border: '1px solid rgba(255, 255, 255, 0.3)',
                           borderRadius: '8px',
-                          color: '#fff',
+                          color: '#ffffff',
+                          padding: '12px',
                         }}
-                        formatter={(value: number) => `$${(value / 1e12).toFixed(2)}T`}
+                        labelStyle={{ 
+                          color: '#ffffff',
+                          fontWeight: '600',
+                          marginBottom: '4px',
+                        }}
+                        itemStyle={{ color: '#ffffff' }}
+                        formatter={(value: number) => [`$${(value / 1e12).toFixed(2)}T`, 'Market Cap']}
                       />
                       <Legend />
                     </PieChart>
