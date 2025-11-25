@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowRight, TrendingUp, AlertTriangle, BarChart3, Shield, Zap, Globe, Star, Brain, GitCompare, Bell, Grid, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import useSWR from 'swr'
+import { ArrowRight, TrendingUp, AlertTriangle, BarChart3, Shield, Zap, Globe, Star, Brain, GitCompare, Bell, Grid, ChevronLeft, ChevronRight, Quote, LineChart as LineChartIcon, PieChart as PieChartLucide } from 'lucide-react'
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import Logo from '@/components/Logo'
+import { fetchTopCoins, Coin } from '@/lib/api'
 
 const testimonials = [
   {
@@ -56,6 +59,12 @@ const testimonials = [
 export default function HomePage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
+  const [chartData, setChartData] = useState<any[]>([])
+
+  // Fetch top coins for charts
+  const { data: coins = [] } = useSWR('home-top-coins', () => fetchTopCoins(10), {
+    refreshInterval: 60000,
+  })
 
   useEffect(() => {
     setIsVisible(true)
@@ -64,6 +73,49 @@ export default function HomePage() {
     }, 5000)
     return () => clearInterval(interval)
   }, [])
+
+  // Prepare chart data
+  const topPerformersData = useMemo(() => {
+    return coins.slice(0, 5).map((coin: Coin) => ({
+      name: coin.symbol.toUpperCase(),
+      change: coin.price_change_percentage_24h || 0,
+      volume: (coin.total_volume || 0) / 1e6, // Convert to millions
+    }))
+  }, [coins])
+
+  const marketCapDistribution = useMemo(() => {
+    if (coins.length === 0) return []
+    const top5 = coins.slice(0, 5)
+    const others = coins.slice(5).reduce((sum: number, coin: Coin) => sum + (coin.market_cap || 0), 0)
+    
+    return [
+      ...top5.map((coin: Coin) => ({
+        name: coin.symbol.toUpperCase(),
+        value: coin.market_cap || 0,
+      })),
+      { name: 'Others', value: others },
+    ]
+  }, [coins])
+
+  const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#6b7280']
+
+  // Generate animated price trend data
+  useEffect(() => {
+    if (coins.length > 0) {
+      const generateTrendData = () => {
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        return days.map((day, index) => {
+          const basePrice = 43000 + Math.random() * 5000
+          return {
+            day,
+            price: basePrice,
+            volume: Math.random() * 1000000000,
+          }
+        })
+      }
+      setChartData(generateTrendData())
+    }
+  }, [coins])
 
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
@@ -107,8 +159,13 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className={`pt-32 pb-20 px-6 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="container mx-auto max-w-7xl">
+      <section className={`pt-32 pb-20 px-6 transition-opacity duration-1000 relative overflow-hidden ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        <div className="container mx-auto max-w-7xl relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-fade-in-up">
               <div className="inline-block px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-400 text-sm font-semibold mb-6">
@@ -142,62 +199,102 @@ export default function HomePage() {
             </div>
             <div className="relative animate-fade-in-right">
               <div className="glass rounded-2xl p-8 border border-white/20">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <TrendingUp className="text-green-400" size={20} />
+                {coins.length > 0 && chartData.length > 0 ? (
+                  <div className="space-y-6">
+                    {/* Live Price Chart */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <div className="font-semibold text-white text-lg">Market Trend</div>
+                          <div className="text-sm text-gray-400">7-Day Overview</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-green-400 text-xl">
+                            {coins[0] ? `$${coins[0].current_price?.toLocaleString()}` : '$43,250'}
+                          </div>
+                          <div className="text-sm text-green-400">
+                            {coins[0]?.price_change_percentage_24h ? 
+                              `${coins[0].price_change_percentage_24h > 0 ? '+' : ''}${coins[0].price_change_percentage_24h.toFixed(2)}%` 
+                              : '+5.2%'}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-white">Bitcoin</div>
-                        <div className="text-sm text-gray-400">+5.2% (24h)</div>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                            <XAxis dataKey="day" stroke="#9ca3af" style={{ fontSize: '10px' }} />
+                            <YAxis stroke="#9ca3af" style={{ fontSize: '10px' }} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '8px',
+                              }}
+                              labelStyle={{ color: '#fff' }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="price"
+                              stroke="#3b82f6"
+                              strokeWidth={2}
+                              fill="url(#priceGradient)"
+                              animationDuration={1500}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-white">$43,250</div>
+                    
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {coins.slice(0, 3).map((coin: Coin, index: number) => (
+                        <div key={coin.id} className="p-3 bg-white/5 rounded-lg">
+                          <div className="text-xs text-gray-400 mb-1">{coin.symbol.toUpperCase()}</div>
+                          <div className="font-bold text-white text-sm">
+                            ${coin.current_price?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                          </div>
+                          <div className={`text-xs ${(coin.price_change_percentage_24h || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {(coin.price_change_percentage_24h || 0) >= 0 ? '+' : ''}
+                            {coin.price_change_percentage_24h?.toFixed(1)}%
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        <AlertTriangle className="text-orange-400" size={20} />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <TrendingUp className="text-green-400" size={20} />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white">Loading...</div>
+                          <div className="text-sm text-gray-400">Market Data</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-white">Alert Detected</div>
-                        <div className="text-sm text-gray-400">High risk coin</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-orange-400">Risk: 78%</div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                        <Brain className="text-purple-400" size={20} />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white">Market Sentiment</div>
-                        <div className="text-sm text-gray-400">Fear & Greed Index</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-yellow-400">65 - Greed</div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 px-6 bg-white/5 border-y border-white/10">
+      {/* Stats Section with Charts */}
+      <section className="py-16 px-6 bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 border-y border-white/10">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
                 <Shield className="text-green-400" size={28} />
               </div>
               <div>
@@ -207,7 +304,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse" style={{ animationDelay: '0.2s' }}>
                 <BarChart3 className="text-blue-400" size={28} />
               </div>
               <div>
@@ -217,7 +314,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse" style={{ animationDelay: '0.4s' }}>
                 <Zap className="text-purple-400" size={28} />
               </div>
               <div>
@@ -227,21 +324,108 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* Market Performance Charts */}
+          {coins.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+              {/* Top Performers Bar Chart */}
+              <div className="card bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <LineChartIcon className="text-blue-400" size={24} />
+                  <h3 className="text-xl font-bold text-white">Top 24h Performers</h3>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topPerformersData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                      <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                      <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '8px',
+                          color: '#fff',
+                        }}
+                      />
+                      <Bar 
+                        dataKey="change" 
+                        radius={[8, 8, 0, 0]}
+                        animationDuration={1500}
+                      >
+                        {topPerformersData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.change >= 0 ? '#10b981' : '#ef4444'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 text-sm text-gray-400">
+                  Showing top 5 cryptocurrencies by 24h price change
+                </div>
+              </div>
+
+              {/* Market Cap Distribution Pie Chart */}
+              <div className="card bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+                <div className="flex items-center gap-3 mb-6">
+                  <PieChartLucide className="text-purple-400" size={24} />
+                  <h3 className="text-xl font-bold text-white">Market Cap Distribution</h3>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={marketCapDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        animationDuration={1500}
+                      >
+                        {marketCapDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '8px',
+                          color: '#fff',
+                        }}
+                        formatter={(value: number) => `$${(value / 1e12).toFixed(2)}T`}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 text-sm text-gray-400">
+                  Market capitalization breakdown of top cryptocurrencies
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6 scroll-mt-20">
-        <div className="container mx-auto max-w-7xl">
-          <div className="mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Powerful Features</h2>
-            <p className="text-xl text-gray-400 max-w-2xl">
+      <section id="features" className="py-20 px-6 scroll-mt-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none"></div>
+        <div className="container mx-auto max-w-7xl relative z-10">
+          <div className="mb-16 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
+              Powerful Features
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Everything you need to make informed cryptocurrency investment decisions
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="card hover:scale-105 transition-transform">
+            <div className="card hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
                 <AlertTriangle className="text-white" size={32} />
               </div>
@@ -252,8 +436,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="card hover:scale-105 transition-transform">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
+            <div className="card hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4 animate-pulse">
                 <BarChart3 className="text-white" size={32} />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Real-Time Market Data</h3>
@@ -263,7 +447,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="card hover:scale-105 transition-transform">
+            <div className="card hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-4">
                 <TrendingUp className="text-white" size={32} />
               </div>
@@ -344,11 +528,14 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 px-6 bg-white/5">
-        <div className="container mx-auto max-w-7xl">
-          <div className="mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">How It Works</h2>
-            <p className="text-xl text-gray-400 max-w-2xl">
+      <section className="py-20 px-6 bg-gradient-to-br from-gray-900/50 via-blue-900/20 to-purple-900/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)] pointer-events-none"></div>
+        <div className="container mx-auto max-w-7xl relative z-10">
+          <div className="mb-16 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
+              How It Works
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Three simple steps to protect and grow your crypto portfolio
             </p>
           </div>

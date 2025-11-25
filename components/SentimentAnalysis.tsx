@@ -2,28 +2,59 @@
 
 import { useEffect, useMemo } from 'react'
 import useSWR from 'swr'
-import { Brain, TrendingUp, TrendingDown, AlertCircle, Meh } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
+import { Brain, TrendingUp, TrendingDown, AlertCircle, Meh, BarChart3, DollarSign, Globe } from 'lucide-react'
 
 interface FearGreedData {
   value: number
   valueClassification: string
   timestamp: number
+  historical?: Array<{ value: number; timestamp: number }>
+  average?: number
+  trend?: 'increasing' | 'decreasing'
+  change?: number
+}
+
+interface MarketData {
+  bitcoinDominance: number
+  totalMarketCap: number
+  bitcoinMarketCap: number
+  marketCapChange24h: number
+  activeCryptocurrencies: number
 }
 
 const fetchFearGreedIndex = async (): Promise<FearGreedData> => {
-  const response = await fetch('/api/fear-greed')
+  const response = await fetch('/api/fear-greed', { cache: 'no-store' })
   if (!response.ok) {
     throw new Error('Failed to fetch Fear & Greed Index')
   }
   return response.json()
 }
 
+const fetchMarketData = async (): Promise<MarketData> => {
+  const response = await fetch('/api/sentiment', { cache: 'no-store' })
+  if (!response.ok) {
+    return {
+      bitcoinDominance: 0,
+      totalMarketCap: 0,
+      bitcoinMarketCap: 0,
+      marketCapChange24h: 0,
+      activeCryptocurrencies: 0,
+    }
+  }
+  return response.json()
+}
+
 export default function SentimentAnalysis() {
   const { data: fearGreed, isLoading, error } = useSWR('fear-greed-index', fetchFearGreedIndex, {
-    refreshInterval: 300000, // Refresh every 5 minutes
+    refreshInterval: 60000, // Refresh every minute
     revalidateOnFocus: true,
     errorRetryCount: 3,
     errorRetryInterval: 5000,
+  })
+
+  const { data: marketData } = useSWR('market-sentiment', fetchMarketData, {
+    refreshInterval: 300000, // Refresh every 5 minutes
   })
 
   const sentimentData = useMemo(() => {
@@ -90,9 +121,27 @@ export default function SentimentAnalysis() {
       value,
       classification: fearGreed.valueClassification,
       timestamp: fearGreed.timestamp,
+      historical: fearGreed.historical || [],
+      average: fearGreed.average || value,
+      trend: fearGreed.trend || 'neutral',
+      change: fearGreed.change || 0,
       ...sentiment,
     }
   }, [fearGreed])
+
+  const chartData = useMemo(() => {
+    if (!sentimentData?.historical) return []
+    
+    return sentimentData.historical
+      .slice()
+      .reverse()
+      .slice(0, 30)
+      .map((item: any) => ({
+        date: new Date(item.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: item.value,
+        timestamp: item.timestamp,
+      }))
+  }, [sentimentData])
 
 
   if (isLoading) {
@@ -277,19 +326,125 @@ export default function SentimentAnalysis() {
             </div>
           </div>
           <div className="card bg-white/5">
-            <div className="text-sm text-gray-400 mb-1">Market Sentiment</div>
-            <div className={`text-xl font-bold ${sentimentData.color}`}>
-              {sentimentData.label}
+            <div className="text-sm text-gray-400 mb-1">30-Day Average</div>
+            <div className="text-xl font-bold text-gray-300">
+              {sentimentData.average}
+              {sentimentData.change !== undefined && (
+                <span className={`text-sm ml-2 ${sentimentData.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  ({sentimentData.change > 0 ? '+' : ''}{sentimentData.change})
+                </span>
+              )}
             </div>
           </div>
           <div className="card bg-white/5">
-            <div className="text-sm text-gray-400 mb-1">Last Updated</div>
-            <div className="text-xl font-bold text-gray-300">
-              {new Date(sentimentData.timestamp * 1000).toLocaleTimeString()}
+            <div className="text-sm text-gray-400 mb-1">Trend</div>
+            <div className="text-xl font-bold flex items-center gap-2">
+              {sentimentData.trend === 'increasing' ? (
+                <>
+                  <TrendingUp className="text-green-400" size={20} />
+                  <span className="text-green-400">Increasing</span>
+                </>
+              ) : (
+                <>
+                  <TrendingDown className="text-red-400" size={20} />
+                  <span className="text-red-400">Decreasing</span>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Historical Chart */}
+      {chartData.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <BarChart3 className="text-blue-400" size={20} />
+            30-Day Historical Trend
+          </h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis 
+                  domain={[0, 100]}
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                  }}
+                  labelStyle={{ color: '#9ca3af' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#8884d8"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Market Metrics */}
+      {marketData && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="card bg-blue-500/10 border-blue-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <DollarSign className="text-blue-400" size={20} />
+              <div className="text-sm text-gray-400">Bitcoin Dominance</div>
+            </div>
+            <div className="text-2xl font-bold text-blue-400">
+              {marketData.bitcoinDominance.toFixed(2)}%
+            </div>
+            <div className="text-xs text-gray-400 mt-1">BTC market share</div>
+          </div>
+          
+          <div className="card bg-purple-500/10 border-purple-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <Globe className="text-purple-400" size={20} />
+              <div className="text-sm text-gray-400">Total Market Cap</div>
+            </div>
+            <div className="text-2xl font-bold text-purple-400">
+              ${(marketData.totalMarketCap / 1e12).toFixed(2)}T
+            </div>
+            <div className={`text-xs mt-1 ${marketData.marketCapChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {marketData.marketCapChange24h >= 0 ? '+' : ''}{marketData.marketCapChange24h.toFixed(2)}% (24h)
+            </div>
+          </div>
+          
+          <div className="card bg-green-500/10 border-green-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <BarChart3 className="text-green-400" size={20} />
+              <div className="text-sm text-gray-400">Active Cryptocurrencies</div>
+            </div>
+            <div className="text-2xl font-bold text-green-400">
+              {marketData.activeCryptocurrencies.toLocaleString()}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">Tracked assets</div>
+          </div>
+        </div>
+      )}
 
       {/* Sentiment Scale Reference */}
       <div className="card">

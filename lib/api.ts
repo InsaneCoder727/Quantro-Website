@@ -172,38 +172,74 @@ export const detectPumpAndDump = (coins: Coin[]): PumpDumpAlert[] => {
         ? coin.total_volume / coin.market_cap
         : 0
 
-    // Risk scoring algorithm
+    // Additional indicators for small coins
+    const priceRangeVolatility = coin.high_24h && coin.low_24h && coin.low_24h > 0
+      ? ((coin.high_24h - coin.low_24h) / coin.low_24h) * 100
+      : 0
+
+    // Risk scoring algorithm - improved for small coins
     let riskScore = 0
 
-    // High volume spike (suspicious)
-    if (volumeSpike > 500) riskScore += 30
+    // Volume spike detection (more sensitive for small coins)
+    if (volumeSpike > 1000) riskScore += 40
+    else if (volumeSpike > 500) riskScore += 30
     else if (volumeSpike > 300) riskScore += 20
-    else if (volumeSpike > 200) riskScore += 10
+    else if (volumeSpike > 150) riskScore += 10
+    else if (volumeSpike > 100) riskScore += 5
 
-    // Extreme price surge
-    if (priceSurge > 100) riskScore += 25
+    // Price surge (critical indicator)
+    if (priceSurge > 200) riskScore += 35
+    else if (priceSurge > 100) riskScore += 25
     else if (priceSurge > 50) riskScore += 15
     else if (priceSurge > 25) riskScore += 10
+    else if (priceSurge > 15) riskScore += 5
 
     // Market cap manipulation
-    if (marketCapChange > 100) riskScore += 20
-    else if (marketCapChange > 50) riskScore += 10
+    if (marketCapChange > 150) riskScore += 25
+    else if (marketCapChange > 100) riskScore += 20
+    else if (marketCapChange > 50) riskScore += 12
+    else if (marketCapChange > 25) riskScore += 6
 
-    // High volume relative to market cap (low liquidity)
-    if (volumeToMarketCapRatio > 0.5) riskScore += 15
+    // High volume relative to market cap (low liquidity = higher risk)
+    if (volumeToMarketCapRatio > 1.0) riskScore += 25 // Volume exceeds market cap!
+    else if (volumeToMarketCapRatio > 0.7) riskScore += 20
+    else if (volumeToMarketCapRatio > 0.5) riskScore += 15
     else if (volumeToMarketCapRatio > 0.3) riskScore += 10
     else if (volumeToMarketCapRatio > 0.2) riskScore += 5
 
-    // Small market cap coins are more susceptible
-    if (coin.market_cap < 10000000) riskScore += 10
-    else if (coin.market_cap < 50000000) riskScore += 5
+    // Small market cap coins are MUCH more susceptible - increased weight
+    if (coin.market_cap < 5000000) { // < $5M - micro cap
+      riskScore += 25
+      // Small coins with any volatility are suspicious
+      if (priceSurge > 10 || volumeSpike > 100) riskScore += 10
+    } else if (coin.market_cap < 10000000) { // < $10M - very small
+      riskScore += 18
+    } else if (coin.market_cap < 25000000) { // < $25M - small
+      riskScore += 12
+    } else if (coin.market_cap < 50000000) { // < $50M - small-medium
+      riskScore += 8
+    } else if (coin.market_cap < 100000000) { // < $100M - medium
+      riskScore += 4
+    }
 
-    // Lower threshold to show more alerts (for demo purposes)
-    // Only flag coins with significant risk
-    if (riskScore >= 20) {
+    // Price volatility within 24h (high volatility = higher manipulation risk)
+    if (priceRangeVolatility > 100) riskScore += 15 // 100%+ price swing
+    else if (priceRangeVolatility > 50) riskScore += 10
+    else if (priceRangeVolatility > 30) riskScore += 6
+
+    // Low rank but high volume (unusual pattern)
+    if (coin.market_cap_rank && coin.market_cap_rank > 100 && volumeToMarketCapRatio > 0.3) {
+      riskScore += 8
+    }
+
+    // Lower threshold to catch more suspicious activity, especially small coins
+    // Minimum threshold: 15 for small coins (< $50M), 20 for others
+    const threshold = coin.market_cap < 50000000 ? 15 : 20
+    
+    if (riskScore >= threshold) {
       alerts.push({
         coin,
-        riskScore,
+        riskScore: Math.min(riskScore, 100), // Cap at 100
         indicators: {
           volumeSpike,
           priceSurge,
@@ -221,17 +257,29 @@ export const detectPumpAndDump = (coins: Coin[]): PumpDumpAlert[] => {
 
 const calculateVolumeSpike = (coin: Coin): number => {
   // Estimate volume spike based on current volume and market cap
-  // This is a simplified calculation - in production, you'd compare to historical averages
+  // More aggressive detection for small coins
   if (!coin.total_volume || !coin.market_cap) return 0
 
-  const avgVolumeRatio = 0.05 // Average daily volume is ~5% of market cap
+  // Adjust expected volume ratio based on market cap
+  // Smaller coins typically have lower volume ratios, so spikes are more significant
+  let avgVolumeRatio = 0.05 // Default 5% for large coins
+  
+  if (coin.market_cap < 10000000) {
+    avgVolumeRatio = 0.02 // 2% for micro caps
+  } else if (coin.market_cap < 50000000) {
+    avgVolumeRatio = 0.03 // 3% for small caps
+  } else if (coin.market_cap < 500000000) {
+    avgVolumeRatio = 0.04 // 4% for mid caps
+  }
+
   const expectedVolume = coin.market_cap * avgVolumeRatio
   const actualVolume = coin.total_volume
 
   if (expectedVolume === 0) return 0
 
-  // Return percentage increase
-  return ((actualVolume - expectedVolume) / expectedVolume) * 100
+  // Return percentage increase (cap at reasonable maximum for display)
+  const spike = ((actualVolume - expectedVolume) / expectedVolume) * 100
+  return Math.min(spike, 2000) // Cap at 2000% for display purposes
 }
 
 export const fetchCryptoNews = async (limit: number = 10): Promise<NewsArticle[]> => {
